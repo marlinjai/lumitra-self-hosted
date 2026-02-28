@@ -1,0 +1,85 @@
+services:
+  # ─── Storage Brain API ────────────────────────────────────────────────
+  storage-brain:
+    build:
+      context: ../storage-brain
+    ports:
+      - '${STORAGE_BRAIN_PORT:-3000}:3000'
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-storage-brain}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+      DATABASE_URL: ${STORAGE_BRAIN_DATABASE_URL:-postgres://postgres:postgres@postgres:5432/storagebrain}
+      ADMIN_API_KEY: ${STORAGE_BRAIN_ADMIN_API_KEY:-admin-dev-key}
+      URL_SIGNING_SECRET: ${URL_SIGNING_SECRET:-dev-signing-secret}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      PORT: '3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
+
+  # ─── Data Brain API ───────────────────────────────────────────────────
+  data-brain:
+    build:
+      context: ../data-brain
+    ports:
+      - '${DATA_BRAIN_PORT:-3001}:3001'
+    environment:
+      DATABASE_URL: ${DATA_BRAIN_DATABASE_URL:-postgres://postgres:postgres@postgres:5432/databrain}
+      ADMIN_API_KEY: ${DATA_BRAIN_ADMIN_API_KEY:-admin-dev-key}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      PORT: '3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ─── PostgreSQL (shared) ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: lumitra
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  # ─── MinIO (S3-compatible storage) ────────────────────────────────────
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-minioadmin}
+    volumes:
+      - miniodata:/data
+
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+        sleep 2 &&
+        mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minioadmin} $${MINIO_ROOT_PASSWORD:-minioadmin} &&
+        mc mb --ignore-existing local/$${S3_BUCKET:-storage-brain} &&
+        echo 'Bucket ready'
+      "
+
+volumes:
+  pgdata:
+  miniodata:
