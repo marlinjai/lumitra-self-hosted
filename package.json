@@ -1,0 +1,12 @@
+{
+  "name": "lumitra-self-hosted",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "docs:dev": "clearify dev",
+    "docs:build": "clearify build"
+  },
+  "devDependencies": {
+    "@marlinjai/clearify": "^1.9.0"
+  }
+}
