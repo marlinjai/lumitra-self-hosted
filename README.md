@@ -5,8 +5,8 @@ Run both **Storage Brain** (file storage API) and **Data Brain** (structured dat
 ## Quick Start
 
 ```bash
-git clone https://github.com/marlinjai/lumitra-self-host
-cd lumitra-self-host
+git clone https://github.com/marlinjai/lumitra-self-hosted
+cd lumitra-self-hosted
 cp .env.example .env
 docker compose up
 ```
@@ -41,7 +41,7 @@ Both return an `apiKey` — use it with the respective SDK.
 ## Use the SDKs
 
 ```bash
-npm install @marlinjai/storage-brain-sdk @marlinjai/data-brain-sdk
+pnpm add @marlinjai/storage-brain-sdk @marlinjai/data-brain-sdk
 ```
 
 ```typescript
