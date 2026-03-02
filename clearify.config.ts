@@ -4,9 +4,8 @@ export default defineConfig({
   name: 'Lumitra Self-Hosted',
   siteUrl: 'https://self-hosted-docs.lumitra.co',
   hubProject: {
-    hubUrl: 'https://docs.lumitra.co',
-    hubName: 'ERP Suite',
-    name: 'Lumitra Self-Hosted',
+    hubUrl: 'https://docs.cloud.lumitra.co',
+    hubName: 'Lumitra Cloud',
     description: 'Docker-based self-hosting for Brain APIs',
     status: 'active',
     icon: '🐳',
